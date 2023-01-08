@@ -8,6 +8,10 @@ const popups = { // Ids of all popups
 	thanks : 276
 };
 
+const closedModalHashStateId = "#modalClosed";
+const openModalHashStateId = "#modalOpen";
+let currentModalId = 39
+
 const regNumberFormats = { // Number Formats
 	default : /^[АВЕКМНОРСТУХ](?!000)\d{3}[АВЕКМНОРСТУХ]{2}$/u,
 	trailer : /^[АВЕКМНОРСТУХ]{2}(?!0000)\d{4}$/u,
@@ -19,49 +23,49 @@ const regNumberFormats = { // Number Formats
 };
 
 const numbersData = { // Сменяемые данные в окне Дубликаты
-	default : {
+	"Один стандартный (длинный)" : {
 		price : 2100,
 		imgUrl : "https://avtolife.online/wp-content/uploads/2021/09/one-number.png",
 		format : regNumberFormats.default,
 		placeholder : "A001AA"
 	},
-	double : { 
+	"Два сдандартных (2 длинных)" : { 
 		price : 3200,
 		imgUrl : "https://avtolife.online/wp-content/uploads/2021/10/2-standart.png",
 		format : regNumberFormats.default,
 		placeholder : "A001AA"
 	},
-	square : { 
+	"Квадратный (1шт)" : { 
 		price : 2600,
 		imgUrl : "https://avtolife.online/wp-content/uploads/2021/10/Number-Kub.png",
 		format : regNumberFormats.default,
 		placeholder : "A001AA"
 	},
-	defaultAndSquare : { 
+	"Комбо (1 длинный + 1 квадратный)" : { 
 		price : 4500,
 		imgUrl : "https://avtolife.online/wp-content/uploads/2021/10/standart-kub.png",
 		format : regNumberFormats.default,
 		placeholder : "A001AA"
 	},
-	tractor : { // Тракторные
+	"Тракторный (1шт)" : { // Тракторные
 		price : 3100,
 		imgUrl : "https://avtolife.online/wp-content/uploads/2021/10/Traktor.png",
 		format : regNumberFormats.moto,
 		placeholder : "0001AA"
 	},
-	moto : { // Мото
+	"Мото (мини)" : { // Мото
 		price : 2600,
 		imgUrl : "https://avtolife.online/wp-content/uploads/2021/10/Number-Moto.png",
 		format : regNumberFormats.moto,
 		placeholder : "0001АА"
 	},
-	mvd : { // Ментовские
+	"Полицейский" : { // Ментовские
 		price : 2100,
 		imgUrl : "https://avtolife.online/wp-content/uploads/2021/10/Police.png",
 		format : regNumberFormats.mvd,
 		placeholder : "А0001"
 	},
-	military : { // Военные
+	"Военный" : { // Военные
 		price : 2100,
 		imgUrl : "https://avtolife.online/wp-content/uploads/2021/10/Voennii.png",
 		format : regNumberFormats.military,
@@ -80,27 +84,27 @@ const numbersData = { // Сменяемые данные в окне Дубли�
 }
 
 const regData = { // Цены и иконки в окне Регистрация в ГИБДД
-	takeStatement : {
+	"Взять за меня заявление в ГИБДД" : {
 		price : 2000,
 		icon : "fa-user-edit"
 	},
-	unregAuto : {
+	"Снять а/м с учета без моего участия" : {
 		price : 3000,
 		icon : "fa-handshake-slash"
 	},
-	checkLimits : {
+	"Проверить а/м на наличие ограничений" : {
 		price : 1000,
 		icon : "fa-check-double"
 	},
-	restore : {
+	"Восстановить утраченные документы без моего участия" : {
 		price : 3000,
 		icon : "fa-undo"
 	},
-	change : {
+	"Внести изменения (прописка, фамилия и т.д.) без моего участия" : {
 		price : 3000,
 		icon : "fa-file-signature"
 	},
-	regAuto : {
+	"Зарегистрировать а/м без моего участия." : {
 		price : 5000,
 		icon : "fa-car"
 	}
@@ -143,22 +147,26 @@ let customizeRegNumberForm = (formSelector) => { // Вешаются событ�
 
 let customizePhoneNumberForm = (formSelector) => { // Вешаются события и параметры на формы номера телефона
 	const phoneInput = document.querySelector(formSelector);
-	phoneInput.style.padding = "0px 0px 0px 24px" // Отступ от +7
+	//phoneInput.style.padding = "0px 0px 0px 24px" // Отступ от +7
 
 	new IMask(phoneInput, {
-		mask: '(000)000-00-00',
+		mask: '+7(000)000-00-00',
 	});
 }
 
 let changeNumberData = (type) => { // Меняет данные в соотвествии с выбором типа гос. номера (картинка, цена, placeholder, шаблон валидации)
 	let img = document.querySelector("#number-image img"),
 		price = document.querySelector("#number-price h3"),
-		form = document.querySelector("#form-field-gosnomer_default__number_form"),
-		gosnomerDefaultNumberForm = document.querySelector("#form-field-gosnomer_default__number_form");
+		form = document.querySelector("#form-field-reg_number"),
+		gosnomerDefaultNumberForm = document.querySelector("#form-field-reg_number");
+
+	const hiddenPriceField = document.querySelector("#form-field-price")
+
 
 	img.src = numbersData[type].imgUrl;
 	img.setAttribute('srcset','');
 	price.innerText = numbersData[type].price + " руб.";
+	hiddenPriceField.value = numbersData[type].price
 	form.placeholder = numbersData[type].placeholder;
 	form.setAttribute("maxlength", numbersData[type].placeholder.length);
 
@@ -174,49 +182,124 @@ let changeRegistrationData = (type) => { // Меняет цену и иконк�
 	let icon = document.querySelector("#reg-icon i"),
 		price = document.querySelector("#reg-price h3");
 
+	const hiddenPriceField = document.querySelector("#form-field-price")
+
 	price.innerText = regData[type].price + " руб.";
+	hiddenPriceField.value = regData[type].price
 	icon.className = "fa "+ regData[type].icon;
 }
 
-let addThanksAlertOnSubmit = () => { // Выводит окно "Спасибо за заказ!", закрывая текущее окно
+const addThanksAlertOnSubmit = () => { // Выводит окно "Спасибо за заказ!", закрывая текущее окно
 	document.querySelector(".elementor-popup-modal form").addEventListener("submit", (e) => {
 		elementorProFrontend.modules.popup.closePopup( {}, e);
 		elementorProFrontend.modules.popup.showPopup( { id: popups.thanks } )
 	});
 }
 
+const getForms = () => {
+	const prefix = "#form-field";
 
-	jQuery(document).on('elementor/popup/show', (event, id, instance) => { // Селекторы доступны только после события октрытия попапа	
-		if(id == popups.dublicat) {
-			customizeRegNumberForm("#form-field-gosnomer_default__number_form"); // Gos. nomer input selector
+	const forms = {
+		username : document.querySelector(`${prefix}-name`),
+		phone : document.querySelector(`${prefix}-phone`),
+		carName : document.querySelector(`${prefix}-car_name`),
+		regNumber : document.querySelector(`${prefix}-reg_number`),
+		regNumberType : document.querySelector(`${prefix}-reg_number_type`),
+		regService : document.querySelector(`${prefix}-reg_service`),
+		regionCode : document.querySelector(`${prefix}-region_code`),
+		email: document.querySelector(`${prefix}-email`)
+	}
+
+	for(const formElem in forms) {
+		if(!forms[formElem]) delete forms[formElem]
+	}
 	
-			const selectType = document.querySelector("#form-field-field_67befb2");
-			selectType.addEventListener("change", (e) => {
-				changeNumberData(e.target.value);
-			});
-			
-			customizePhoneNumberForm("#form-field-gosnomer_default__phone_form");
-			addThanksAlertOnSubmit();
+	return forms;
+}
+
+const addFormDataSavingToLocalStorage = () => {
+	const forms = getForms()
+	const values = loadFormDataFromLocalStorage()
+
+	for(const formElem in forms) {
+		let timeout;
+		values[formElem] = forms[formElem].value
+
+		forms[formElem].addEventListener("input", e => {
+			clearTimeout(timeout)
+			timeout = setTimeout(() => {
+				values[formElem] = forms[formElem].value
+				if(!values[formElem]) delete values[formElem]
+				localStorage.avtolife = JSON.stringify(values)
+
+				console.log(JSON.parse(localStorage.avtolife))
+			}, 1000)
+		})
+	}
+}
+
+const loadFormDataFromLocalStorage = () => {
+	const forms = getForms()
+	let values = {}
+
+	if(!localStorage.avtolife) return values;
+
+	values = JSON.parse(localStorage.avtolife)
+
+	for(const formElem in forms) {
+		if(values[formElem]) {
+			forms[formElem].value = values[formElem]
+		}
+	}
+
+	return values;
+}
+
+
+	jQuery(document).on('elementor/popup/show', (event, id, instance) => { // Селекторы доступны только после события октрытия попапа
+		
+		addFormDataSavingToLocalStorage()
+
+		if (window.history && window.history.pushState && id !== popups.thanks) {
+		    window.location.hash = openModalHashStateId;
+		    currentModalId = id
+		}	
+		
+		if(id == popups.dublicat) {
+			customizeRegNumberForm("#form-field-reg_number") // Gos. nomer input selector
+	
+			const selectType = document.querySelector("#form-field-reg_number_type")
+
+			selectType.addEventListener("input", (e) => {
+				changeNumberData(selectType.value);
+			})
+
+			changeNumberData(selectType.value)
+			customizePhoneNumberForm("#form-field-phone")
+			addThanksAlertOnSubmit()
 		}
 
 		if(id == popups.registration) {
-			customizePhoneNumberForm("#form-field-field_65f2c3a");
+			customizePhoneNumberForm("#form-field-phone")
 
-			const selectType = document.querySelector("#form-field-reg_data_select");
+			const selectType = document.querySelector("#form-field-reg_service")
+
 			selectType.addEventListener("change", (e) => {
-				changeRegistrationData(e.target.value);
+				changeRegistrationData(e.target.value)
 			});
-			addThanksAlertOnSubmit();
+			changeRegistrationData(selectType.value)
+
+			addThanksAlertOnSubmit()
 		}
 		
 		if(id == popups.to) {
-			customizeRegNumberForm("#form-field-message");
-			customizePhoneNumberForm("#form-field-field_497a2b5");
+			customizeRegNumberForm("#form-field-reg_number");
+			customizePhoneNumberForm("#form-field-phone");
 			addThanksAlertOnSubmit();
 		}
 		
 		if(id == popups.osago) {
-			customizePhoneNumberForm("#form-field-field_65f2c3a");
+			customizePhoneNumberForm("#form-field-phone");
 			addThanksAlertOnSubmit();
 		}
 		
@@ -235,7 +318,27 @@ let addThanksAlertOnSubmit = () => { // Выводит окно "Спасибо 
 	jQuery(document).on('elementor/popup/hide', (event, id, instance) => {
 		if(id == popups.calc) {
 			elementorProFrontend.modules.popup.showPopup( { id: popups.anyQuestions } );
-		}	
+			return
+		}
+
+		if(window.location.hash === openModalHashStateId ) {
+			window.history.back();
+		}
 	});
 
+	jQuery(window).on('popstate', function(e) {
+        if(window.location.hash !== openModalHashStateId ) {
+        	elementorFrontend.documentsManager.documents[currentModalId].getModal().hide()
+        }
+    })
+
 	numbersData.cacheImages();
+
+	let vhMobileFix = () => {
+		let vh = window.innerHeight * 0.01;
+		document.documentElement.style.setProperty('--vh', `${vh}px`);
+	}
+
+	window.addEventListener("resize", () => {
+		vhMobileFix();
+	});
